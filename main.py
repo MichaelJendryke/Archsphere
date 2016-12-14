@@ -7,26 +7,22 @@ import csv
 import numpy as np
 
 
-#configPath = '/Users/mac/Documents/Michael/DBSCAN/DBSCAN_clone/config'
-configPath = 'config'
-#dataPath   = '/Users/mac/Documents/Michael/DBSCAN/DBSCAN_clone/input/data.csv'
-dataPath   = 'input/data.csv'
+dataPath   = '/Users/mac/Documents/Michael/DBSCAN/DBSCAN_clone/input/data.csv'
+#dataPath   = 'input/data.csv'
 
 def main():
     print("Soap Bubble Clustering")
     #print(configPath)
-    #[Data] = getData()
-    Data = [1,1,1,1,1],[1,1,2,1,1],[2,2,2,1,1],[3,3,3,1,1],[4,4,4,1,1],[5,5,5,1,1],[50,50,50,1,1],[95,95,95,1,1],[96,96,96,1,1],[97,97,97,1,1],[98,98,98,1,1],[99,99,99,1,1],[2,2,3,1,1],[2,2,1,1,1],[2,2,4,1,1]
+    Data = getData()[0]
+    #Data = [1,1,1,1,1],[1,1,2,1,1],[2,2,2,1,1],[3,3,3,1,1],[4,4,4,1,1],[5,5,5,1,1],[50,50,50,1,1],[95,95,95,1,1],[96,96,96,1,1],[97,97,97,1,1],[98,98,98,1,1],[99,99,99,1,1],[2,2,3,1,1],[2,2,1,1,1],[2,2,4,1,1]
     print("These are the input points")
     print(Data)
-    combinations = soapbubbles(Data, 1.75)
+    combinations = soapbubbles(Data, 10)
     print('These are all the combinatioins: ')
     print(combinations)
 
     print("Let the magic happen")
     magic(combinations)
-    #flocken = soapfoam(combinations)
-    #print(flocken)
 
 
 def magic(mat):
@@ -66,7 +62,7 @@ def soapbubbles(data, ratio):
                 #print('combining: i=' + str(i) + ' with: ' + str(j))
                 distance = distance3D(data[i][0],data[i][1],data[i][2],data[j][0],data[j][1],data[j][2])
                 #print('distance: ' + str(distance))
-                twobubbles = bubbles(data, ratio, i, j)
+                twobubbles = bubbles(data, ratio, i, j) #distance of two bubble together
                 #print('twobubbles: ' + str(twobubbles))
                 if distance < twobubbles:
                     combinations[i][j] = 1
