@@ -5,6 +5,7 @@ http://stackoverflow.com/questions/41112073/point-cloud-cluster-analysis-in-pyth
 
 import csv
 import numpy as np
+import networkx as nx
 import shapefile
 
 
@@ -18,16 +19,18 @@ def main():
     #Data = [1,1,1,1,1],[1,1,2,1,1],[2,2,2,1,1],[3,3,3,1,1],[4,4,4,1,1],[5,5,5,1,1],[50,50,50,1,1],[95,95,95,1,1],[96,96,96,1,1],[97,97,97,1,1],[98,98,98,1,1],[99,99,99,1,1],[2,2,3,1,1],[2,2,1,1,1],[2,2,4,1,1]
     print("These are the input points")
     print(Data)
-    combinations = soapbubbles(Data, 4) #second is the ratio
+    multiplier = 3.0
+    combinations = soapbubbles(Data, multiplier) #second is the ratio
     print('These are all the combinatioins: ')
     print(combinations)
 
     print("Let the magic happen")
-    cluster = magic(combinations)
+    #cluster = magic(combinations)
+    #print(cluster)
+    cluster = magic2(combinations)
     print('good')
-
     data = addclustertodata(Data,cluster)
-    exportshape(data)
+    exportshape(data, multiplier)
 
 
 def magic(mat):
@@ -54,6 +57,13 @@ def magic(mat):
     for row, id in enumerate(row_to_cc_id):
         groups[id].append(row)
     return groups
+
+
+def magic2(mat):
+    G = nx.from_numpy_matrix(np.array(mat))
+    G = nx.connected_components(G)
+    return G
+
 
 def soapbubbles(data, ratio):
     print('rows in data: ' + str(np.size(data,0)))
@@ -162,23 +172,25 @@ def parse(line):
 
 def addclustertodata(d,c):
     clusterID = 0
+    totalids = 0
     for cc in c:
         #print(len(cc))
-        #if len(cc) == 1:
-        #    marker = 0
-        #else:
-        #    clusterID += 1
-        #    marker = clusterID
-        clusterID += 1
-        marker = clusterID
+        totalids = totalids + len(cc)
+        if len(cc) == 1:
+            marker = 0
+        else:
+            clusterID += 1
+            marker = clusterID
+        #clusterID += 1
+        #marker = clusterID
         for r in cc:
             d[r] = d[r] + [marker]
             #print(d[r])
-
+    print(totalids)
     return d
 
 
-def exportshape(points):
+def exportshape(points,m):
     w = shapefile.Writer()
     w.shapeType = 1 #see 'shape type' at  http://www.esri.com/library/whitepapers/pdfs/shapefile.pdf
     #w.autoBalance = 1
@@ -196,7 +208,7 @@ def exportshape(points):
         w.record(p[6], p[2],p[3],p[4],p[5],p[7])
 
 
-    w.save('result')
+    w.save('result_mult' + str(m*10))
 
     print('done.')
 
