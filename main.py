@@ -14,23 +14,33 @@ dataPath   = '/Users/mac/Documents/Michael/DBSCAN/DBSCAN_clone/input/data.csv'
 
 def main():
     print("Soap Bubble Clustering")
+    for m in range(5,6,1):
+        for w in range(30,51,1):
+            SBC(m,w/10)
+    print("The End.")
+
+def SBC(mtp,weight):
+    print('with mtp: ' + str(mtp) + ' and weight: ' + str(weight), end='')
     #print(configPath)
     Data = getData()[0]
     #Data = [1,1,1,1,1],[1,1,2,1,1],[2,2,2,1,1],[3,3,3,1,1],[4,4,4,1,1],[5,5,5,1,1],[50,50,50,1,1],[95,95,95,1,1],[96,96,96,1,1],[97,97,97,1,1],[98,98,98,1,1],[99,99,99,1,1],[2,2,3,1,1],[2,2,1,1,1],[2,2,4,1,1]
-    print("These are the input points")
-    print(Data)
-    multiplier = 3.0
-    combinations = soapbubbles(Data, multiplier) #second is the ratio
-    print('These are all the combinatioins: ')
-    print(combinations)
 
-    print("Let the magic happen")
+    #print("These are the input points")
+    #print(Data)
+
+    combinations = soapbubbles(Data, weight) #second is the ratio
+
+    #print('These are all the combinatioins: ')
+    #print(combinations)
+
+    #print("Let the magic happen")
     #cluster = magic(combinations)
     #print(cluster)
+
     cluster = magic2(combinations)
-    print('good')
-    data = addclustertodata(Data,cluster)
-    exportshape(data, multiplier)
+
+    data = addclustertodata(Data,cluster,mtp)
+    exportshape(data, mtp, weight)
 
 
 def magic(mat):
@@ -66,7 +76,7 @@ def magic2(mat):
 
 
 def soapbubbles(data, ratio):
-    print('rows in data: ' + str(np.size(data,0)))
+    #print('rows in data: ' + str(np.size(data,0)))
     nbrr = np.size(data,0)
     #nbrr = 10
     combinations = np.zeros([nbrr,nbrr])
@@ -170,14 +180,16 @@ def parse(line):
     return [int(data[0]), int(data[1])]
 
 
-def addclustertodata(d,c):
+def addclustertodata(d,c,m):
     clusterID = 0
     totalids = 0
+    totalnoise = 0
     for cc in c:
         #print(len(cc))
         totalids = totalids + len(cc)
-        if len(cc) == 1:
+        if len(cc) <= m:
             marker = 0
+            totalnoise = totalnoise + len(cc)
         else:
             clusterID += 1
             marker = clusterID
@@ -186,11 +198,12 @@ def addclustertodata(d,c):
         for r in cc:
             d[r] = d[r] + [marker]
             #print(d[r])
-    print(totalids)
+    print(' number of clusters: ' + str(clusterID) + ' noise: ' + str(totalnoise), end='')
+    print(' and % 6.2f percent are clustered' % ((1-(totalnoise/totalids))*100),end='')
     return d
 
 
-def exportshape(points,m):
+def exportshape(points, mtp, weight):
     w = shapefile.Writer()
     w.shapeType = 1 #see 'shape type' at  http://www.esri.com/library/whitepapers/pdfs/shapefile.pdf
     #w.autoBalance = 1
@@ -203,13 +216,13 @@ def exportshape(points,m):
 
 
     for p in points:
-        print(p)
+        #print(p)
         w.point(p[0], p[1],p[2],0)
         w.record(p[6], p[2],p[3],p[4],p[5],p[7])
 
 
-    w.save('result_mult' + str(m*10))
+    w.save('result_mtp_' + str(mtp) + '_weight_' + str(weight*10))
 
-    print('done.')
+    print(' done.')
 
 main()
