@@ -20,7 +20,7 @@ def main():
     print("The End.")
 
 def SBC(mtp,weight):
-    print('with mtp: ' + str(mtp) + ' and weight: ' + str(weight), end='')
+    print('with mtp: ' + str(mtp) + ' and weight: ' + str(weight), end='');
     #print(configPath)
     Data = getData()[0]
     #Data = [1,1,1,1,1],[1,1,2,1,1],[2,2,2,1,1],[3,3,3,1,1],[4,4,4,1,1],[5,5,5,1,1],[50,50,50,1,1],[95,95,95,1,1],[96,96,96,1,1],[97,97,97,1,1],[98,98,98,1,1],[99,99,99,1,1],[2,2,3,1,1],[2,2,1,1,1],[2,2,4,1,1]
