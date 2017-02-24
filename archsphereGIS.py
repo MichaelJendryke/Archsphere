@@ -1,35 +1,77 @@
 '''
 Created by Michael Jendryke 2016
 http://stackoverflow.com/questions/41112073/point-cloud-cluster-analysis-in-python-identifying-clusters-from-binary-matrix
+0 is Inputfile
+1 is Height field
+2 is Weight field
+3 is Multiplier Min
+4 is Multiplier Max
+5 is Minimum Total Points Min
+6 is Minimum Total Points Max
+7 is Output folder
 '''
+
+
 
 import csv
 import numpy as np
 import networkx as nx
-import shapefile
-import arcpy
-
-
-dataPath   = '/Users/mac/Documents/Michael/DBSCAN/DBSCAN_clone/input/data.csv'
-#dataPath   = 'input/data.csv'
+#import shapefile
+import arcpy as ap
 
 def main():
     print("Soap Bubble Clustering")
-    for m in range(5,6,1):
-        for w in range(30,51,1):
-            SBC(m,w/10)
-    print("The End.")
+    ap.SetParameterAsText(0, 'D:\Dropbox\DATA\people\Gino\PointsUTM45N2PlusAttributes.shp')
+    inFC = ap.GetParameterAsText(0)
+    heigthField = ap.GetParameterAsText(1)
+    weightField = ap.GetParameterAsText(2)
+    mtpMin = int(ap.GetParameterAsText(3))
+    mtpMax = int(ap.GetParameterAsText(4))
+    multMin = float(ap.GetParameterAsText(5))
+    multMax = float(ap.GetParameterAsText(6))
+    outDir = ap.GetParameterAsText(7)
 
-def SBC(mtp,weight):
-    print('with mtp: ' + str(mtp) + ' and weight: ' + str(weight));
+    desc = ap.Describe(inFC)
+    ap.AddMessage(desc.SpatialReference.type)
+    if desc.SpatialReference.type != 'Projected':
+        ap.AddError('Your data does not seem to be projected')
+        quit()
+
+    data = []
+    # Enter for loop for each feature
+    #
+    for row in arcpy.da.SearchCursor(inFC, ["OID@", "SHAPE@XY", heigthField,weightField]):
+        # Print x,y coordinates of each point feature
+        #
+        id = int(row[0])
+        x, y = row[1]
+        z = row[2]
+        w = row[3]
+        data.append([id,x,y,z,w]);
+        #ap.AddMessage("{0}, {1}, {2}, {3}, {4}".format(id, x, y, z, w))
+
+
+
+
+    for m in range(mtpMin,mtpMax+1,1):
+        for w in range(int(multMin*10),int(multMax*10)+1,1):
+            r = SBC(data ,m,w/10)
+            createShape(inFC, outDir, m, w, data)
+    ap.AddMessage("The End.")
+
+
+
+
+def SBC(Data,mtp,multiplier):
+    print('with mtp: ' + str(mtp) + ' and weight: ' + str(multiplier))
     #print(configPath)
-    Data = getData()[0]
+    #Data = getData(dataPath)[0]
     #Data = [1,1,1,1,1],[1,1,2,1,1],[2,2,2,1,1],[3,3,3,1,1],[4,4,4,1,1],[5,5,5,1,1],[50,50,50,1,1],[95,95,95,1,1],[96,96,96,1,1],[97,97,97,1,1],[98,98,98,1,1],[99,99,99,1,1],[2,2,3,1,1],[2,2,1,1,1],[2,2,4,1,1]
 
     #print("These are the input points")
     #print(Data)
 
-    combinations = soapbubbles(Data, weight) #second is the ratio
+    combinations = soapbubbles(Data, multiplier) #second is the multiplier
 
     #print('These are all the combinatioins: ')
     #print(combinations)
@@ -40,8 +82,26 @@ def SBC(mtp,weight):
 
     cluster = magic2(combinations)
 
-    data = addclustertodata(Data,cluster,mtp)
-    exportshape(data, mtp, weight)
+    result = addclustertodata(Data,cluster,mtp)
+    #exportshape(data, mtp, weight)
+    return result
+
+
+def createShape(infile, outdir,m,w, d):
+    #ap.AddMessage(outdir)
+    outfile = outdir + "\\result" + str(m) + "_" + str(w) + ".shp"
+    ap.Copy_management(infile, outfile)
+    ap.AddField_management(outfile,"cluster","SHORT","8")
+    cursor = arcpy.da.UpdateCursor(outfile,['OID@', 'cluster'])
+    # Update the road buffer distance field based on road type.
+    #   Road type is either 1,2,3,4  Distance is in meters.
+    for row in cursor:
+        #ap.AddMessage("{0}, {1}".format(row[0],d[row[0]][5])) #column 5 holds the cluster
+        row[1] = d[row[0]][5]
+        cursor.updateRow(row)
+
+    # Delete cursor and row objects
+    del cursor, row
 
 
 def magic(mat):
@@ -76,7 +136,7 @@ def magic2(mat):
     return G
 
 
-def soapbubbles(data, ratio):
+def soapbubbles(data, multiplier):
     #print('rows in data: ' + str(np.size(data,0)))
     nbrr = np.size(data,0)
     #nbrr = 10
@@ -86,9 +146,9 @@ def soapbubbles(data, ratio):
             combinations[i][j] = 1
             if i !=j :
                 #print('combining: i=' + str(i) + ' with: ' + str(j))
-                distance = distance3D(data[i][0],data[i][1],data[i][2],data[j][0],data[j][1],data[j][2])
+                distance = distance3D(data[i][1],data[i][2],data[i][3],data[j][1],data[j][2],data[j][3])
                 #print('distance: ' + str(distance))
-                twobubbles = bubbles(data, ratio, i, j) #distance of two bubble together
+                twobubbles = bubbles(data, multiplier, i, j) #distance of two bubble together
                 #print('twobubbles: ' + str(twobubbles))
                 if distance < twobubbles:
                     combinations[i][j] = 1
@@ -108,7 +168,7 @@ def bubbles(pts, ratio, ids, idd):  # bubble diameter for ids(ource) and idd(est
         mdd = float(pts[idd][3])
     else:
         mdd = float(pts[idd][4])
-    b = (mds * ratio) + (mdd * ratio)
+    b = (pts[ids][4] * ratio) + (pts[idd][4] * ratio)
     return b
 
 
@@ -158,7 +218,7 @@ def writeData(data, clusterlists, ratio, minpts):
     return
 
 
-def getData():
+def getData(dataPath):
     Data = []
 
     with open(dataPath, 'r') as filein:
@@ -199,31 +259,31 @@ def addclustertodata(d,c,m):
         for r in cc:
             d[r] = d[r] + [marker]
             #print(d[r])
-    print(' number of clusters: ' + str(clusterID) + ' noise: ' + str(totalnoise))
-    print(' and % 6.2f percent are clustered' % ((1-(totalnoise/totalids))*100))
+    ap.AddMessage(' number of clusters: ' + str(clusterID) + ' noise: ' + str(totalnoise))
+    ap.AddMessage(' and % 6.2f percent are clustered' % ((1-(totalnoise/totalids))*100))
     return d
 
 
-def exportshape(points, mtp, weight):
-    w = shapefile.Writer()
-    w.shapeType = 1 #see 'shape type' at  http://www.esri.com/library/whitepapers/pdfs/shapefile.pdf
-    #w.autoBalance = 1
-    w.field('Object')
-    w.field('Z')
-    w.field('NS')
-    w.field('WE')
-    w.field('Height')
-    w.field('cluster')
-
-
-    for p in points:
-        #print(p)
-        w.point(p[0], p[1],p[2],0)
-        w.record(p[6], p[2],p[3],p[4],p[5],p[7])
-
-
-    w.save('result_mtp_' + str(mtp) + '_weight_' + str(weight*10))
-
-    print(' done.')
+# def exportshape(points, mtp, weight):
+#     w = shapefile.Writer()
+#     w.shapeType = 1 #see 'shape type' at  http://www.esri.com/library/whitepapers/pdfs/shapefile.pdf
+#     #w.autoBalance = 1
+#     w.field('Object')
+#     w.field('Z')
+#     w.field('NS')
+#     w.field('WE')
+#     w.field('Height')
+#     w.field('cluster')
+#
+#
+#     for p in points:
+#         #print(p)
+#         w.point(p[0], p[1],p[2],0)
+#         w.record(p[6], p[2],p[3],p[4],p[5],p[7])
+#
+#
+#     w.save('result_mtp_' + str(mtp) + '_weight_' + str(weight*10))
+#
+#     print(' done.')
 
 main()
