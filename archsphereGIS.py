@@ -18,10 +18,11 @@ import numpy as np
 import networkx as nx
 #import shapefile
 import arcpy as ap
+import arcpy.mapping as am
+import os
+
 
 def main():
-    print("Soap Bubble Clustering")
-    ap.SetParameterAsText(0, 'D:\Dropbox\DATA\people\Gino\PointsUTM45N2PlusAttributes.shp')
     inFC = ap.GetParameterAsText(0)
     heigthField = ap.GetParameterAsText(1)
     weightField = ap.GetParameterAsText(2)
@@ -29,80 +30,70 @@ def main():
     mtpMax = int(ap.GetParameterAsText(4))
     multMin = float(ap.GetParameterAsText(5))
     multMax = float(ap.GetParameterAsText(6))
-    outDir = ap.GetParameterAsText(7)
+    outdir = ap.GetParameterAsText(7)
 
+
+
+    # Is data projected?
     desc = ap.Describe(inFC)
     ap.AddMessage(desc.SpatialReference.type)
     if desc.SpatialReference.type != 'Projected':
         ap.AddError('Your data does not seem to be projected')
         quit()
 
+    # Get data to work with
     data = []
-    # Enter for loop for each feature
-    #
-    for row in arcpy.da.SearchCursor(inFC, ["OID@", "SHAPE@XY", heigthField,weightField]):
-        # Print x,y coordinates of each point feature
-        #
+    for row in ap.da.SearchCursor(inFC, ["OID@", "SHAPE@XY", heigthField,weightField]):
         id = int(row[0])
         x, y = row[1]
         z = row[2]
         w = row[3]
-        data.append([id,x,y,z,w]);
-        #ap.AddMessage("{0}, {1}, {2}, {3}, {4}".format(id, x, y, z, w))
+        data.append([id, x, y, z, w]);
 
-
-
-
-    for m in range(mtpMin,mtpMax+1,1):
-        for w in range(int(multMin*10),int(multMax*10)+1,1):
-            r = SBC(data ,m,w/10)
-            createShape(inFC, outDir, m, w, data)
+    # Loop through mtp and weight, then export Shape and add it to
+    for m in range(mtpMin, mtpMax+1, 1):
+        for w in range(int(multMin*10), int(multMax*10)+1, 1):
+            r = archsphere(data, m, w/10)
+            outFC = createshape(inFC, outdir, data, m, w)
     ap.AddMessage("The End.")
 
 
 
-
-def SBC(Data,mtp,multiplier):
-    print('with mtp: ' + str(mtp) + ' and weight: ' + str(multiplier))
-    #print(configPath)
-    #Data = getData(dataPath)[0]
-    #Data = [1,1,1,1,1],[1,1,2,1,1],[2,2,2,1,1],[3,3,3,1,1],[4,4,4,1,1],[5,5,5,1,1],[50,50,50,1,1],[95,95,95,1,1],[96,96,96,1,1],[97,97,97,1,1],[98,98,98,1,1],[99,99,99,1,1],[2,2,3,1,1],[2,2,1,1,1],[2,2,4,1,1]
-
-    #print("These are the input points")
-    #print(Data)
-
+def archsphere(Data,mtp,multiplier):
     combinations = soapbubbles(Data, multiplier) #second is the multiplier
-
-    #print('These are all the combinatioins: ')
-    #print(combinations)
-
-    #print("Let the magic happen")
-    #cluster = magic(combinations)
-    #print(cluster)
-
     cluster = magic2(combinations)
-
-    result = addclustertodata(Data,cluster,mtp)
-    #exportshape(data, mtp, weight)
+    result = addclustertodata(Data, cluster, mtp)
     return result
 
-
-def createShape(infile, outdir,m,w, d):
-    #ap.AddMessage(outdir)
-    outfile = outdir + "\\result" + str(m) + "_" + str(w) + ".shp"
-    ap.Copy_management(infile, outfile)
-    ap.AddField_management(outfile,"cluster","SHORT","8")
-    cursor = arcpy.da.UpdateCursor(outfile,['OID@', 'cluster'])
+def createshape(infile, outdir, d, m, w):
+    outfile = os.path.join(outdir, "Result_m%s_w%s.shp" % (str(m), str(w)))
+    ap.AddMessage("Creating file: %s" % outfile)
+    ap.Copy_management(infile, outfile, "Shapefile")
+    ap.AddField_management(outfile, "cluster", "SHORT","8")
+    cursor = ap.da.UpdateCursor(outfile, ['OID@', 'cluster'])
     # Update the road buffer distance field based on road type.
-    #   Road type is either 1,2,3,4  Distance is in meters.
+    # Road type is either 1,2,3,4  Distance is in meters.
     for row in cursor:
-        #ap.AddMessage("{0}, {1}".format(row[0],d[row[0]][5])) #column 5 holds the cluster
+        # ap.AddMessage("{0}, {1}".format(row[0],d[row[0]][5])) #column 5 holds the cluster
         row[1] = d[row[0]][5]
         cursor.updateRow(row)
 
     # Delete cursor and row objects
+    addlayertotoc(outfile)
     del cursor, row
 
+def addlayertotoc(o):
+    # Set up the dataframe to display the shapes
+    mxd = am.MapDocument("CURRENT")
+    # get the data frame
+    df = am.ListDataFrames(mxd, "*")[0]
+    # create a new layer
+    newlayer = am.Layer(o)
+    # add the layer to the map at the bottom of the TOC in data frame 0
+    ap.mapping.AddLayer(df, newlayer, "BOTTOM")
+    ap.RefreshActiveView()
+    ap.RefreshTOC()
+    del mxd, df, newlayer
 
 def magic(mat):
     # Make the undirected version of the graph (no self loops)
