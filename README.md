@@ -1,7 +1,7 @@
 ## Archsphere
 Point Clustering for geographic data
 
-#For ArcMAP
+# For ArcMAP
 
 Save ArchSphere.tbx and archsphereGIS.py on your local drive and add the tbx file to your ArcToolbox.
 Double click the archsphere script to start the tool and set your parameters:
