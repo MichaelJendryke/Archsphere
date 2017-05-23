@@ -3,7 +3,7 @@ Point Clustering for geographic data
 
 ### ArcMAP
 
-Save ArchSphere.tbx and archsphereGIS.py on your local drive and add the tbx file to your ArcToolbox.
+Save ArchSphere.tbx and archsphereGIS.py to your local drive and add the tbx file to your ArcToolbox.
 Double click the archsphere script to start the tool and set your parameters:
 
 1. Add your input shapefile
@@ -16,9 +16,9 @@ Double click the archsphere script to start the tool and set your parameters:
 8. Your output location  
 
 #### Consider
-- The input shapefile should be projected (in meter), best is UTM
-- You can get height infromation from a DEM using the Spatial Analyst tool "Extract Multi Values to Points" if you have not collected this information.
-- The Multiplier increments in 0.1 steps
+- The input shapefile should be projected (in meter), best is UTM.
+- Use Spatial Analyst tool "Extract Multi Values to Points" to get height information from a DEM or simply set the field to whatever you want if you have not collected height information.
+- The Multiplier increments in 0.1 steps.
 - The output location should be an existing folder.
 
 ### Generic
