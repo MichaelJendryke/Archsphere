@@ -1,5 +1,5 @@
 ## Archsphere
-Point clustering for archaeological data
+Point clustering for archeologically data
 
 ### How to use in ESRI/ArcMAP
 
@@ -22,7 +22,7 @@ Double click the archsphere script to start the tool and set your parameters:
 - The Multiplier increments in 0.1 steps.
 - The output location should be an existing folder.
 
-### How to use the algorithm in python directly 
+### How to use the algorithm directly in python  
 coming soon
 
 
