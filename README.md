@@ -1,8 +1,8 @@
 ## Archsphere
 Point clustering for archeologically data
 
-Reference:
-Gino Caspari , Michael Jendryke (2017): Archsphere – A Cluster Algorithm for Archaeological Applications. Journal of Archaeological Science: Reports. [in review]
+### Reference
+Caspari, Gino; Jendryke, Michael (2017): Archsphere – A Cluster Algorithm for Archaeological Applications. Journal of Archaeological Science: Reports. [in review]
 
 ### How to use in ESRI/ArcMAP
 
