@@ -7,13 +7,13 @@ Save ArchSphere.tbx and archsphereGIS.py to your local drive and add the tbx fil
 Double click the archsphere script to start the tool and set your parameters:
 
 1. Add your input shapefile
-2. Set your height field. 
+2. Set your height field 
 3. Set your weight field
 4. Set the low Minimum Total Number of Points
 5. Set the high Minimum Total Number of Points
 6. Set the low Multiplier
 7. Set the high Multiplier
-8. Your output location  
+8. Your output folder location  
 
 #### Consider
 - The input shapefile should be projected (in meter), best is UTM.
